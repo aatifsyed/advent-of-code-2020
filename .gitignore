@@ -1,1 +1,8 @@
+# Build
 /target
+
+# Scratchpad
+/scratchpad
+
+# Filesystem junk
+*:Zone.Identifier
