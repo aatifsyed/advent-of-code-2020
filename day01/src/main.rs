@@ -1,3 +1,4 @@
+use fileutils;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
@@ -12,6 +13,7 @@ fn read_username_from_file() -> Result<String, io::Error> {
 }
 
 fn main() {
+    fileutils::foo();
     match read_username_from_file() {
         Ok(_) => println!("Success!"),
         Err(_) => println!("Failed!"),

@@ -3,6 +3,9 @@
 [[package]]
 name = "day01"
 version = "0.1.0"
+dependencies = [
+ "fileutils 0.1.0",
+]
 
 [[package]]
 name = "fileutils"
