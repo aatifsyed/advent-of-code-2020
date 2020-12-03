@@ -34,7 +34,6 @@ fn count_encounters(
         let index = pos.h * grid.width + pos.w;
         let current_char = grid.buffer[index];
         *seen.entry(current_char).or_insert(0) += 1;
-        println!("counted {} at {:?}", current_char, pos);
         pos.update(&direction, &grid);
     }
     seen
@@ -59,21 +58,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn load_example() {
-        let m = fileutils::RectangularCharGrid::from_file("../inputs/examples/day03.txt");
-        println!("{:?}", m);
-        println!("{}", m);
+    fn test_part1() {
+        assert_eq!(part1("../inputs/day03.txt"), 173);
     }
-
-    #[test]
-    fn traverse() {
-        let m = fileutils::RectangularCharGrid::from_file("../inputs/examples/day03.txt");
-        println!("{:?}", count_encounters(m, Direction { right: 3, down: 1 }));
-    }
-    // #[test]
-    // fn test_part1() {
-    //     assert_eq!(part1("../inputs/day03.txt"), foo);
-    // }
     // #[test]
     // fn test_part2() {
     //     assert_eq!(part2("../inputs/day03.txt"), foo);
