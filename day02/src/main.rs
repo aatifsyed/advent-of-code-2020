@@ -41,21 +41,11 @@ impl PasswordEntry {
             .expect("Couldn't regex on line");
         PasswordEntry {
             rule: PasswordRule {
-                min_occurences: captures.extracts_captured("min"),
-                max_occurences: captures
-                    .name("max")
-                    .expect("No max!")
-                    .as_str()
-                    .parse::<usize>()
-                    .expect("Couldn't parse max"),
-                letter: captures
-                    .name("letter")
-                    .expect("No letter!")
-                    .as_str()
-                    .parse::<char>()
-                    .expect("Couldn't parse letter"),
+                min_occurences: captures.extract_captured("min"),
+                max_occurences: captures.extract_captured("max"),
+                letter: captures.extract_captured("letter"),
             },
-            password: String::from(captures.name("password").expect("No password!").as_str()),
+            password: captures.extract_captured("password"),
         }
     }
 }
