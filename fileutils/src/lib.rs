@@ -22,18 +22,18 @@ pub fn numbers_from_file(filename: impl AsRef<path::Path>) -> Vec<isize> {
 }
 
 #[derive(Debug)]
-pub struct RectangularCharMap {
+pub struct RectangularCharGrid {
     pub buffer: Vec<char>,
     pub width: usize,
     pub height: usize,
 }
 
-impl RectangularCharMap {
-    pub fn from_file(filename: impl AsRef<path::Path>) -> RectangularCharMap {
+impl RectangularCharGrid {
+    pub fn from_file(filename: impl AsRef<path::Path>) -> RectangularCharGrid {
         let lines = lines_from_file(filename);
         let width = lines[0].len();
         let height = lines.len();
-        RectangularCharMap {
+        RectangularCharGrid {
             buffer: lines
                 .into_iter()
                 .flat_map(|line: String| -> Vec<char> {
@@ -47,7 +47,7 @@ impl RectangularCharMap {
     }
 }
 
-impl fmt::Display for RectangularCharMap {
+impl fmt::Display for RectangularCharGrid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for h in 0..self.height {
             for w in 0..self.width {
