@@ -15,6 +15,25 @@ struct PasswordEntry {
     password: String,
 }
 
+trait ExtractsCaptured {
+    fn extract_captured<T: std::str::FromStr>(&self, group_name: &str) -> T
+    where
+        T::Err: std::fmt::Debug;
+}
+
+impl ExtractsCaptured for regex::Captures<'_> {
+    fn extract_captured<T: std::str::FromStr>(&self, group_name: &str) -> T
+    where
+        T::Err: std::fmt::Debug,
+    {
+        self.name(group_name)
+            .expect(&format!("No {}!", group_name))
+            .as_str()
+            .parse::<T>()
+            .expect(&format!("Couldn't parse {}!", group_name))
+    }
+}
+
 impl PasswordEntry {
     fn from_line(line: &str) -> PasswordEntry {
         let captures = PASSWORD_ENTRY_REGEX
@@ -22,12 +41,7 @@ impl PasswordEntry {
             .expect("Couldn't regex on line");
         PasswordEntry {
             rule: PasswordRule {
-                min_occurences: captures
-                    .name("min")
-                    .expect("No min!")
-                    .as_str()
-                    .parse::<usize>()
-                    .expect("Couldn't parse min"),
+                min_occurences: captures.extracts_captured("min"),
                 max_occurences: captures
                     .name("max")
                     .expect("No max!")
