@@ -17,7 +17,7 @@ impl Position {
         self.h += direction.down;
         self.w += direction.right;
         // Infinite, repeated width
-        if self.w > grid.width {
+        if self.w >= grid.width {
             self.w -= grid.width;
         }
     }
