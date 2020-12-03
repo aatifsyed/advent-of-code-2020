@@ -46,11 +46,25 @@ fn part1(filepath: &str) -> usize {
         .expect("No Trees!")
 }
 
-fn part2(filepath: &str) {}
+fn part2(filepath: &str) -> usize {
+    let directions = vec![
+        Direction { right: 1, down: 1 },
+        Direction { right: 3, down: 1 },
+        Direction { right: 5, down: 1 },
+        Direction { right: 7, down: 1 },
+        Direction { right: 1, down: 2 },
+    ];
+
+    let counts = directions.into_iter().map(|d| -> usize {
+        let grid = fileutils::RectangularCharGrid::from_file(filepath);
+        *count_encounters(grid, d).get(&'#').expect("No Trees!")
+    });
+    counts.fold(1, |a, b| a * b)
+}
 
 fn main() {
     println!("part 1: {}", part1("inputs/day03.txt"));
-    // println!("part 2: {}", part2("inputs/day03.txt"));
+    println!("part 2: {}", part2("inputs/day03.txt"));
 }
 
 #[cfg(test)]
@@ -61,8 +75,8 @@ mod tests {
     fn test_part1() {
         assert_eq!(part1("../inputs/day03.txt"), 173);
     }
-    // #[test]
-    // fn test_part2() {
-    //     assert_eq!(part2("../inputs/day03.txt"), foo);
-    // }
+    #[test]
+    fn test_part2() {
+        assert_eq!(part2("../inputs/day03.txt"), 4385176320);
+    }
 }
