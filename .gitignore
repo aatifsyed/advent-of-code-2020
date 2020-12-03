@@ -6,3 +6,6 @@
 
 # Filesystem junk
 *:Zone.Identifier
+
+# Template I use for making new days
+/main.rs

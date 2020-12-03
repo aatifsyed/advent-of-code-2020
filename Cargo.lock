@@ -26,6 +26,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "day03"
+version = "0.1.0"
+dependencies = [
+ "fileutils",
+]
+
+[[package]]
 name = "fileutils"
 version = "0.1.0"
 
@@ -58,6 +65,10 @@ name = "regex-syntax"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b181ba2dcf07aaccad5448e8ead58db5b742cf85dfe035e2227f137a539a189"
+
+[[package]]
+name = "scratchpad"
+version = "0.1.0"
 
 [[package]]
 name = "thread_local"
