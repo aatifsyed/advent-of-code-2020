@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
+use fileutils;
 use regex::Regex;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -38,7 +39,7 @@ impl PasswordEntry {
     fn from_line(line: &str) -> PasswordEntry {
         let captures = PASSWORD_ENTRY_REGEX
             .captures(line)
-            .expect("Couldn't regex on line");
+            .expect(&format!("Couldn't parse line {}!", line));
         PasswordEntry {
             rule: PasswordRule {
                 min_occurences: captures.extract_captured("min"),
@@ -48,6 +49,10 @@ impl PasswordEntry {
             password: captures.extract_captured("password"),
         }
     }
+    fn is_valid(&self) -> bool {
+        let num_matches = self.password.matches(self.rule.letter).count();
+        num_matches >= self.rule.min_occurences && num_matches <= self.rule.max_occurences
+    }
 }
 
 lazy_static! {
@@ -56,7 +61,17 @@ lazy_static! {
             .expect("Couldn't compile regex");
 }
 
-fn main() {}
+fn part1(filepath: &str) -> usize {
+    fileutils::lines_from_file(filepath)
+        .into_iter()
+        .filter(|s| PasswordEntry::from_line(s).is_valid())
+        .count()
+}
+
+fn main() {
+    println!("part1: {}", part1("inputs/day02.txt"));
+    // println!("part2: {}", part2("inputs/day02.txt"));
+}
 
 #[cfg(test)]
 mod tests {
@@ -74,5 +89,18 @@ mod tests {
                 password: String::from("ppppppdx")
             }
         )
+    }
+
+    #[test]
+    fn recognises_valid() {
+        assert!(PasswordEntry::from_line("1-1 a: abc").is_valid())
+    }
+    #[test]
+    fn recognises_invalid() {
+        assert!(!PasswordEntry::from_line("0-0 a: abc").is_valid())
+    }
+    #[test]
+    fn test_part1() {
+        assert_eq!(part1("../inputs/day02.txt"), 536)
     }
 }
