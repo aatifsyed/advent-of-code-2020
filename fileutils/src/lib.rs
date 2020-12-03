@@ -1,10 +1,3 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
 use std::fs;
 use std::io;
 use std::io::BufRead;
@@ -24,4 +17,12 @@ pub fn numbers_from_file(filename: impl AsRef<path::Path>) -> Vec<isize> {
         .into_iter()
         .map(|line| line.parse::<isize>().expect("Couldn't parse line"))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
 }
