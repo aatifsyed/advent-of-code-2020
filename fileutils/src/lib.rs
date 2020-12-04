@@ -62,7 +62,7 @@ impl fmt::Display for RectangularCharGrid {
     }
 }
 
-// Just copying std::io::Lines really
+// Just copying std::io methods really
 pub struct BlankLineDelimited<B> {
     buf: B,
 }
@@ -72,7 +72,7 @@ impl<B: BufRead> Iterator for BlankLineDelimited<B> {
 
     fn next(&mut self) -> Option<Result<String, std::io::Error>> {
         let mut buf = String::new();
-        match self.buf.read_line(&mut buf) {
+        match /**/ {
             Ok(0) => None,
             Ok(_n) => {
                 if buf.ends_with("\n\n") {
@@ -81,6 +81,38 @@ impl<B: BufRead> Iterator for BlankLineDelimited<B> {
                 Some(Ok(buf))
             }
             Err(e) => Some(Err(e)),
+        }
+    }
+}
+
+fn read_until<R: BufRead + ?Sized>(
+    r: &mut R,
+    delim: &str,
+    buf: &mut Vec<u8>,
+) -> Result<usize, std::io::Error> {
+    let mut read = 0;
+    loop {
+        let (done, used) = {
+            let available = match r.fill_buf() {
+                Ok(n) => n,
+                Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(e) => return Err(e),
+            };
+            match memchr::memchr(delim, available) {
+                Some(i) => {
+                    buf.extend_from_slice(&available[..=i]);
+                    (true, i + 1)
+                }
+                None => {
+                    buf.extend_from_slice(available);
+                    (false, available.len())
+                }
+            }
+        };
+        r.consume(used);
+        read += used;
+        if done || used == 0 {
+            return Ok(read);
         }
     }
 }
