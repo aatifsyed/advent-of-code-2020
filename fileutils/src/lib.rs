@@ -56,7 +56,7 @@ impl fmt::Display for RectangularCharGrid {
                     return result::Result::Err(e);
                 }
             }
-            println!("");
+            println!();
         }
         fmt::Result::Ok(())
     }

@@ -1,4 +1,3 @@
-use fileutils;
 use std::collections::HashMap;
 
 struct Direction {
@@ -59,7 +58,7 @@ fn part2(filepath: &str) -> usize {
         let grid = fileutils::RectangularCharGrid::from_file(filepath);
         *count_encounters(grid, d).get(&'#').expect("No Trees!")
     });
-    counts.fold(1, |a, b| a * b)
+    counts.product()
 }
 
 fn main() {

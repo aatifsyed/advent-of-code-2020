@@ -1,5 +1,3 @@
-use fileutils;
-
 // Accept filename due to https://github.com/rust-lang/cargo/issues/8340
 fn part1(filepath: &str) -> isize {
     let nums = fileutils::numbers_from_file(filepath);

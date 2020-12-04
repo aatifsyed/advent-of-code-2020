@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate lazy_static;
-use fileutils;
 use regex::Regex;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -34,10 +33,10 @@ impl ExtractsCaptured for regex::Captures<'_> {
         T::Err: std::fmt::Debug,
     {
         self.name(group_name)
-            .expect(&format!("No {}!", group_name))
+            .unwrap_or_else(|| panic!("No {}!", group_name))
             .as_str()
             .parse::<T>()
-            .expect(&format!("Couldn't parse {}!", group_name))
+            .unwrap_or_else(|_| panic!("Couldn't parse {}!", group_name))
     }
 }
 
@@ -45,7 +44,7 @@ impl PasswordEntry {
     fn from_line(line: &str) -> PasswordEntry {
         let captures = PASSWORD_ENTRY_REGEX
             .captures(line)
-            .expect(&format!("Couldn't parse line {}!", line));
+            .unwrap_or_else(|| panic!("Couldn't parse line {}!", line));
         PasswordEntry {
             rule: PasswordRule {
                 a: captures.extract_captured("min"),
