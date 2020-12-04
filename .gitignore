@@ -9,3 +9,8 @@
 
 # Template I use for making new days
 /main.rs
+
+# Profiling
+perf.data*
+flame.svg
+heaptrack*
