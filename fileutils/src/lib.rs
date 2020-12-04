@@ -62,10 +62,63 @@ impl fmt::Display for RectangularCharGrid {
     }
 }
 
+// Just copying std::io::Lines really
+pub struct BlankLineDelimited<B> {
+    buf: B,
+}
+
+impl<B: BufRead> Iterator for BlankLineDelimited<B> {
+    type Item = Result<String, std::io::Error>;
+
+    fn next(&mut self) -> Option<Result<String, std::io::Error>> {
+        let mut buf = String::new();
+        match self.buf.read_line(&mut buf) {
+            Ok(0) => None,
+            Ok(_n) => {
+                if buf.ends_with("\n\n") {
+                    buf.pop();
+                }
+                Some(Ok(buf))
+            }
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
+pub trait BlankLineDelimitable: std::io::Read {
+    fn blank_lines_delimited(self) -> BlankLineDelimited<Self>
+    where
+        Self: Sized,
+    {
+        BlankLineDelimited { buf: self }
+    }
+}
+
+impl BlankLineDelimitable for std::io::BufReader<std::fs::File> {
+    fn blank_lines_delimited(self) -> BlankLineDelimited<Self>
+    where
+        Self: Sized,
+    {
+        BlankLineDelimited { buf: self }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
+    }
+    #[test]
+    fn delimits_by_blank_lines() {
+        let file = fs::File::open("test_file").expect("no such file");
+        let buf = io::BufReader::new(file);
+        let collected: Vec<String> = buf
+            .blank_lines_delimited()
+            .map(|line| line.expect("Could not parse line"))
+            .collect();
+        println!("{:?}", collected);
+        assert_eq!(collected.len(), 3)
     }
 }

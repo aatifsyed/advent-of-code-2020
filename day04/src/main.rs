@@ -8,49 +8,24 @@ fn part1(filepath: &str) {}
 
 fn part2(filepath: &str) {}
 
-// https://riptutorial.com/rust/example/4149/create-a-hashset-macro
-macro_rules! set {
-    ( $( $x:expr ),* ) => {  // Match zero or more comma delimited items
-        {
-            let mut temp_set = HashSet::new();  // Create a mutable HashSet
-            $(
-                temp_set.insert($x); // Insert each item matched into the HashSet
-            )*
-            temp_set // Return the populated HashSet
-        }
-    };
-}
-
 // ouch https://github.com/rust-lang-nursery/lazy-static.rs/issues/119#issuecomment-419595818
 lazy_static! {
     static ref KEY_VALUE_REGEX: Regex =
         Regex::new(r"(\s|^)(?P<key>\w{3}):(?P<value>\S+)").expect("Couldn't compile regex");
-    static ref EXPECTED_KEYS_MEM: HashSet<String> = set![
-        String::from("byr"),
-        String::from("iyr"),
-        String::from("eyr"),
-        String::from("hgt"),
-        String::from("hcl"),
-        String::from("ecl"),
-        String::from("pid"),
-        String::from("cid")
-    ];
 }
 
-// Usage
-
-trait FromLine {
-    fn from_line(line: String, regex: &Regex) -> Self;
+trait FromRecord {
+    fn from_record(line: &String, regex: &Regex) -> Self;
 }
 
 trait IsValid {
     fn is_valid(&self) -> bool;
 }
 
-impl FromLine for HashMap<String, String> {
-    fn from_line(line: String, regex: &Regex) -> Self {
+impl FromRecord for HashMap<String, String> {
+    fn from_record(line: &String, regex: &Regex) -> Self {
         let mut map = HashMap::new();
-        for capture in regex.captures_iter(&line) {
+        for capture in regex.captures_iter(line) {
             let key: String = capture.extract_captured("key");
             let value: String = capture.extract_captured("value");
             map.insert(key, value);
@@ -61,8 +36,9 @@ impl FromLine for HashMap<String, String> {
 
 impl IsValid for HashMap<String, String> {
     fn is_valid(&self) -> bool {
-        let keys: HashSet<&String> = self.keys().collect();
-        // keys.remove("cid");
+        let mut keys: HashSet<&String> = self.keys().clone().collect();
+        let cid = String::from("cid");
+        keys.remove(&cid);
         keys.len() == 7
     }
 }
@@ -84,24 +60,33 @@ mod tests {
         assert_eq!(part2("../inputs/dayXX.txt"), ());
     }
     #[test]
-    fn print_lines() {
-        for (i, line) in fileutils::lines_from_file("../inputs/examples/day04.txt")
-            .into_iter()
-            .enumerate()
-        {
-            println!("line {:3}, length {:2}: {:?}", i, line.len(), line);
-        }
-    }
-    #[test]
-    fn contains_no_extra_keys() {
+    fn input_contains_expected_number_keys() {
         let map = fileutils::lines_from_file("../inputs/day04.txt")
             .into_iter()
-            .map(|s| HashMap::from_line(s, &*KEY_VALUE_REGEX))
+            .map(|s| HashMap::from_record(&s, &*KEY_VALUE_REGEX))
             .fold(HashMap::new(), |mut a, b| {
                 a.extend(b);
                 a
             });
-        let keys: HashSet<&String> = map.keys().collect();
-        println!("{:?}", keys);
+        assert_eq!(map.len(), 8)
+    }
+    #[test]
+    fn validates_full() {
+        let line = String::from(
+            "ecl:gry pid:860033327 eyr:2020 hcl:#fffffd\nbyr:1937 iyr:2017 cid:147 hgt:183cm",
+        );
+        assert!(HashMap::from_record(&line, &*KEY_VALUE_REGEX).is_valid());
+    }
+    #[test]
+    fn invalidates_missing_required() {
+        let line =
+            String::from("pid:860033327 eyr:2020 hcl:#fffffd\nbyr:1937 iyr:2017 cid:147 hgt:183cm");
+        assert!(!HashMap::from_record(&line, &*KEY_VALUE_REGEX).is_valid());
+    }
+    #[test]
+    fn validates_missing_cid() {
+        let line =
+            String::from("ecl:gry pid:860033327 eyr:2020 hcl:#fffffd\nbyr:1937 iyr:2017 hgt:183cm");
+        assert!(HashMap::from_record(&line, &*KEY_VALUE_REGEX).is_valid());
     }
 }
