@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+use std::iter::FromIterator;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
 // tuple struct
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
 struct BoardingPass {
     id: usize,
 }
@@ -30,7 +32,19 @@ fn part1(filepath: &str) -> usize {
         .id
 }
 
-fn part2(filepath: &str) {}
+fn part2(filepath: &str) -> usize {
+    // https://github.com/dimbleby/advent-of-code-2020/blob/master/src/day05.rs
+    let seats: HashSet<BoardingPass> = HashSet::from_iter(
+        fileutils::lines_from_file(filepath)
+            .into_iter()
+            .map(|s| BoardingPass::from_str(&s).unwrap()),
+    );
+    let max = seats.iter().max().unwrap();
+    let min = seats.iter().min().unwrap();
+    (min.id..max.id)
+        .find(|id| !seats.contains(&BoardingPass { id: *id }))
+        .unwrap()
+}
 
 const DAY: &str = "05";
 fn main() {
@@ -48,6 +62,6 @@ mod tests {
     }
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&format!("../inputs/day{}.txt", DAY)), ());
+        assert_eq!(part2(&format!("../inputs/day{}.txt", DAY)), 583);
     }
 }
