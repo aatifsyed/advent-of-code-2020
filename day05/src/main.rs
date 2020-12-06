@@ -1,9 +1,8 @@
-use std::fs;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
 // tuple struct
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
 struct BoardingPass {
     id: usize,
 }
@@ -25,13 +24,15 @@ impl FromStr for BoardingPass {
 fn part1(filepath: &str) -> usize {
     fileutils::lines_from_file(filepath)
         .into_iter()
-        .map(|s| BoardingPass::from_str(&s))
+        .map(|s| BoardingPass::from_str(&s).unwrap())
         .max()
+        .expect("Couldn't find max")
+        .id
 }
 
 fn part2(filepath: &str) {}
 
-const DAY: &str = "XX";
+const DAY: &str = "05";
 fn main() {
     let filepath = format!("inputs/day{}.txt", DAY);
     println!("part 1: {:?}", part1(&filepath));
@@ -43,7 +44,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&format!("../inputs/day{}.txt", DAY)), ());
+        assert_eq!(part1(&format!("../inputs/day{}.txt", DAY)), 866);
     }
     #[test]
     fn test_part2() {
