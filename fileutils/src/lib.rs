@@ -62,9 +62,18 @@ impl fmt::Display for RectangularCharGrid {
     }
 }
 
+// Wish I could make this an iterator, but not good enough
+pub fn blank_line_delimited(filepath: &str) -> Vec<String> {
+    fs::read_to_string(filepath)
+        .expect("Couldn't read")
+        .split("\n\n")
+        .map(String::from)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
