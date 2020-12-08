@@ -1,64 +1,87 @@
-use itertools::Itertools;
-use petgraph::{dot::Dot, graphmap::GraphMap, Directed};
+use petgraph::{dot::Dot, graphmap::GraphMap, Directed, IntoWeightedEdge};
 use regex::Regex;
-use regexutils::ExtractCaptured;
-use std::str::FromStr;
 use std::{fs, io, path};
 
 #[macro_use]
 extern crate lazy_static;
 
+/// GraphMap requires Copy.
+/// This can't be done for Strings.
+/// Use slices, and read in the file as a String.
+/// Hold references to parts of that string for the lifetime of the program.
 #[derive(Eq, Hash, Debug, Copy, Clone, PartialEq, Ord, PartialOrd)]
-struct Bag<'a>(&'a str);
+struct Bag<'b>(&'b str);
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct Contains(usize);
 
-struct Edge<N, E> {
-    a: N,
-    b: N,
-    weight: E,
+#[derive(Debug, Eq, PartialEq)]
+struct Edge<'e> {
+    from: Bag<'e>,
+    to: Bag<'e>,
+    label: Contains,
 }
 
-struct Edges<N, E> {
-    a: N,
-    v: Vec<(N, E)>,
-}
-
-/// A single line
-impl Edges<Bag<'_>, Contains> {
-    fn decompose(&self) -> Vec<Edge<Bag<'_>, Contains>> {
-        self.v
-            .iter()
-            .map(|tuple| Edge {
-                a: self.a,
-                b: tuple.0,
-                weight: tuple.1,
-            })
-            .collect()
+impl<'e> IntoWeightedEdge<Contains> for Edge<'e> {
+    type NodeId = Bag<'e>;
+    fn into_weighted_edge(self) -> (Self::NodeId, Self::NodeId, Contains) {
+        (self.from, self.to, self.label)
     }
 }
 
-impl FromStr for Edges<Bag<'_>, Contains> {
-    type Err = Box<dyn std::error::Error>;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut caps = BAG_REGEX.captures_iter(s);
+/// Each line is parsed as an Edges.
+#[derive(Debug, Eq, PartialEq)]
+struct Edges<'s> {
+    from: Bag<'s>,
+    tos: Vec<(Bag<'s>, Contains)>,
+}
+
+impl<'s> Iterator for Edges<'s> {
+    type Item = Edge<'s>;
+    fn next(&mut self) -> Option<Edge<'s>> {
+        match self.tos.pop() {
+            Some((to, label)) => Some(Edge {
+                from: self.from,
+                to,
+                label,
+            }),
+            None => None,
+        }
+    }
+}
+
+lazy_static! {
+    static ref BAG_REGEX: Regex = Regex::new(r"((?P<number>\d) )?(?P<description>\w+ \w+) bag")
+        .expect("Couldn't compile bag regex");
+}
+
+impl<'s> Edges<'s> {
+    fn from_string(line: &'s str) -> Self {
+        let mut caps = BAG_REGEX.captures_iter(line);
 
         // Pull out the first capture group. It is the A node
         let (head, tail) = (caps.next().expect("No matches!"), caps);
 
-        let head = &head.extract_captured::<String>("description")[..];
+        let head = head.name("description").expect("Invalid head!").as_str();
         let head = Bag(head);
 
         // Pull out our vector of B nodes and weights, if they exist.
         let tail = tail
             .map(|cap| {
-                let description = &cap.extract_captured::<String>("description")[..];
-                let number = cap.extract_captured::<usize>("number");
+                let description = cap.name("description").expect("No description!").as_str();
+                let number = cap
+                    .name("number")
+                    .expect("No number!")
+                    .as_str()
+                    .parse()
+                    .expect("Couldn't parse number!");
                 (Bag(description), Contains(number))
             })
             .collect();
-        Ok(Edges { a: head, v: tail })
+        Edges {
+            from: head,
+            tos: tail,
+        }
     }
 }
 
@@ -71,11 +94,6 @@ impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
         let dot = Dot::new(&self);
         fs::write(filename, format!("{:?}", dot))
     }
-}
-
-lazy_static! {
-    static ref BAG_REGEX: Regex = Regex::new(r"(P<number>\d )?(P<description>\w+ \w+) bag")
-        .expect("Couldn't compile bag regex");
 }
 
 const DAY: &str = "07";
@@ -102,11 +120,47 @@ mod tests {
         assert_eq!(part2(&format!("../inputs/day{}.txt", DAY)), ());
     }
     #[test]
-    fn visualize_graph() {
-        let mut g = GraphMap::<Bag, Contains, Directed>::new();
-        g.add_node(Bag("yellow"));
-        g.add_edge(Bag("yellow"), Bag("red"), Contains(3));
-        g.add_edge(Bag("purple"), Bag("red"), Contains(4));
+    fn parse_line_into_edges() {
+        let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
+        let e = Edges::from_string(&s);
+        assert_eq!(
+            e,
+            Edges {
+                from: Bag("light red"),
+                tos: vec![
+                    (Bag("bright white"), Contains(1)),
+                    (Bag("muted yellow"), Contains(2))
+                ]
+            }
+        );
+    }
+    #[test]
+    fn iter_edges() {
+        let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
+        let mut e = Edges::from_string(&s);
+        assert_eq!(
+            e.next(),
+            Some(Edge {
+                from: Bag("light red"),
+                to: Bag("muted yellow"),
+                label: Contains(2)
+            })
+        );
+        assert_eq!(
+            e.next(),
+            Some(Edge {
+                from: Bag("light red"),
+                to: Bag("bright white"),
+                label: Contains(1)
+            })
+        );
+        assert_eq!(e.next(), None);
+    }
+    #[test]
+    fn parse_line_into_graph() {
+        let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
+        let e = Edges::from_string(&s);
+        let g: GraphMap<_, _, Directed> = GraphMap::from_edges(e);
         g.to_file("g.dot").unwrap();
     }
 }
