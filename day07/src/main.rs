@@ -108,10 +108,9 @@ const DAY: &str = "07";
 
 fn part1(filepath: &str) {
     let file = fs::read_to_string(filepath).unwrap();
-    for (enumeration, edges) in file.lines().map(|line| Edges::from(line)).enumerate() {
-        let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
-        g.to_file(format!("{}.dot", enumeration)).unwrap();
-    }
+    let edges = file.lines().map(Edges::from).flatten();
+    let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
+    g.to_file("g.dot").unwrap();
 }
 
 fn part2(filepath: &str) {}
