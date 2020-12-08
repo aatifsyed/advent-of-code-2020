@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use petgraph::{dot::Dot, graphmap::GraphMap, Directed, IntoWeightedEdge};
 use regex::Regex;
 use std::{fs, io, path};
@@ -55,8 +56,8 @@ lazy_static! {
         .expect("Couldn't compile bag regex");
 }
 
-impl<'s> Edges<'s> {
-    fn from_string(line: &'s str) -> Self {
+impl<'s> From<&'s str> for Edges<'s> {
+    fn from(line: &'s str) -> Self {
         let mut caps = BAG_REGEX.captures_iter(line);
 
         // Pull out the first capture group. It is the A node
@@ -67,15 +68,22 @@ impl<'s> Edges<'s> {
 
         // Pull out our vector of B nodes and weights, if they exist.
         let tail = tail
-            .map(|cap| {
+            .filter_map(|cap| {
                 let description = cap.name("description").expect("No description!").as_str();
-                let number = cap
-                    .name("number")
-                    .expect("No number!")
-                    .as_str()
-                    .parse()
-                    .expect("Couldn't parse number!");
-                (Bag(description), Contains(number))
+                // Only found this bug later on...
+                // Let's hope there are no orphaned nodes!
+                match description {
+                    "no other" => None,
+                    _ => {
+                        let number = cap
+                            .name("number")
+                            .expect("No number!")
+                            .as_str()
+                            .parse()
+                            .expect("Couldn't parse number!");
+                        Some((Bag(description), Contains(number)))
+                    }
+                }
             })
             .collect();
         Edges {
@@ -98,7 +106,13 @@ impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
 
 const DAY: &str = "07";
 
-fn part1(filepath: &str) {}
+fn part1(filepath: &str) {
+    let file = fs::read_to_string(filepath).unwrap();
+    for (enumeration, edges) in file.lines().map(|line| Edges::from(line)).enumerate() {
+        let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
+        g.to_file(format!("{}.dot", enumeration)).unwrap();
+    }
+}
 
 fn part2(filepath: &str) {}
 
@@ -122,7 +136,7 @@ mod tests {
     #[test]
     fn parse_line_into_edges() {
         let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
-        let e = Edges::from_string(&s);
+        let e = Edges::from(&s[..]);
         assert_eq!(
             e,
             Edges {
@@ -137,7 +151,7 @@ mod tests {
     #[test]
     fn iter_edges() {
         let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
-        let mut e = Edges::from_string(&s);
+        let mut e = Edges::from(&s[..]);
         assert_eq!(
             e.next(),
             Some(Edge {
@@ -159,8 +173,17 @@ mod tests {
     #[test]
     fn parse_line_into_graph() {
         let s = String::from("light red bags contain 1 bright white bag, 2 muted yellow bags.");
-        let e = Edges::from_string(&s);
+        let e = Edges::from(&s[..]);
         let g: GraphMap<_, _, Directed> = GraphMap::from_edges(e);
-        g.to_file("g.dot").unwrap();
+        assert_eq!(
+            g.edge_weight(Bag("light red"), Bag("muted yellow")),
+            Some(&Contains(2))
+        );
+        assert_eq!(
+            g.edge_weight(Bag("light red"), Bag("bright white")),
+            Some(&Contains(1))
+        );
+        assert_eq!(g.node_count(), 3);
+        assert_eq!(g.edge_count(), 2);
     }
 }
