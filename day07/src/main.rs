@@ -2,23 +2,30 @@ use petgraph::{dot::Dot, graphmap::GraphMap, Directed};
 use std::{fs, io, path};
 
 #[derive(Eq, Hash, Debug, Copy, Clone, PartialEq, Ord, PartialOrd)]
-struct Bag<'a>(&'a str);
+struct Bag(&str);
+
+macro_rules! bag {
+    ($s:expr) => {
+        Bag($s.to_string())
+    };
+}
 
 #[derive(Debug)]
 struct Contains(usize);
 
-struct Edge<'a, N, E> {
-    a: &'a N,
-    b: &'a E,
+struct Edge<N, E> {
+    a: N,
+    b: N,
+    weight: E,
 }
 
-trait AddEdge<'a, N, E> {
-    fn add_edge(e: &Edge<'a, N, E>) -> Option<Edge<'a, N, E>>;
+trait AddEdge<N, E> {
+    fn add_edge(&mut self, e: Edge<N, E>) -> Option<E>;
 }
 
-impl<'a> AddEdge<'a, Bag<'_>, Contains> for GraphMap<Bag<'_>, Contains, Directed> {
-    fn add_edge(e: &Edge<'a, Bag<'_>, Contains>) -> Option<Edge<'a, Bag<'a>, Contains>> {
-        Some(*e)
+impl AddEdge<Bag, Contains> for GraphMap<Bag, Contains, Directed> {
+    fn add_edge(&mut self, e: Edge<Bag, Contains>) -> Option<Contains> {
+        self.add_edge(e.a, e.b, e.weight)
     }
 }
 
@@ -26,7 +33,7 @@ trait ToFile {
     fn to_file(&self, filename: impl AsRef<path::Path>) -> Result<(), io::Error>;
 }
 
-impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
+impl ToFile for GraphMap<Bag, Contains, Directed> {
     fn to_file(&self, filename: impl AsRef<path::Path>) -> Result<(), io::Error> {
         let dot = Dot::new(&self);
         fs::write(filename, format!("{:?}", dot))
@@ -59,9 +66,9 @@ mod tests {
     #[test]
     fn visualize_graph() {
         let mut g = GraphMap::<Bag, Contains, Directed>::new();
-        g.add_node(Bag { 0: "yellow" });
-        g.add_edge(Bag { 0: "yellow" }, Bag { 0: "red" }, Contains { 0: 3 });
-        g.add_edge(Bag { 0: "blue" }, Bag { 0: "red" }, Contains { 0: 2 });
+        g.add_node(bag!("yellow"));
+        g.add_edge(bag!("yellow"), bag!("red"), Contains(3));
+        g.add_edge(bag!("purple"), bag!("red"), Contains(3));
         g.to_file("g.dot").unwrap();
     }
 }

@@ -14,3 +14,6 @@
 perf.data*
 flame.svg
 heaptrack*
+
+# Graph files
+*.dot
