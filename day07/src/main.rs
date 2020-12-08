@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use petgraph::{dot::Dot, graphmap::GraphMap, Directed, IntoWeightedEdge};
 use regex::Regex;
 use std::{fs, io, path};
@@ -184,5 +183,12 @@ mod tests {
         );
         assert_eq!(g.node_count(), 3);
         assert_eq!(g.edge_count(), 2);
+    }
+    #[test]
+    fn example() {
+        let file = fs::read_to_string("../inputs/examples/day07.txt").unwrap();
+        let edges = file.lines().map(Edges::from).flatten();
+        let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
+        g.to_file("g.dot").unwrap();
     }
 }
