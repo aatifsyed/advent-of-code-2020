@@ -73,7 +73,10 @@ dependencies = [
 name = "day07"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "petgraph",
+ "regex",
+ "regexutils",
 ]
 
 [[package]]

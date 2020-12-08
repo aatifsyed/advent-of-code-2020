@@ -9,3 +9,6 @@ publish = ["metaswitch"]
 
 [dependencies]
 petgraph = "0.5.1"
+lazy_static = "1.4.0"
+regexutils = {path = "../regexutils"}
+regex = "1.4.2"

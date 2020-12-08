@@ -1,7 +1,9 @@
 digraph {
     0 [ label = "Bag(\"yellow\")" ]
-    1 [ label = "Bag(\"red\")" ]
-    2 [ label = "Bag(\"blue\")" ]
-    0 -> 1 [ label = "Contains(3)" ]
-    2 -> 1 [ label = "Contains(2)" ]
+    1 [ label = "Bag(\"black\")" ]
+    2 [ label = "Bag(\"purple\")" ]
+    3 [ label = "Bag(\"red\")" ]
+    1 -> 2 [ label = "Contains(1)" ]
+    0 -> 3 [ label = "Contains(3)" ]
+    2 -> 3 [ label = "Contains(4)" ]
 }
