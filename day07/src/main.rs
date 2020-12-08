@@ -1,6 +1,10 @@
+use itertools::Itertools;
 use petgraph::{dot::Dot, graphmap::GraphMap, Directed};
 use regex::Regex;
+use regexutils::ExtractCaptured;
+use std::str::FromStr;
 use std::{fs, io, path};
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -21,6 +25,7 @@ struct Edges<N, E> {
     v: Vec<(N, E)>,
 }
 
+/// A single line
 impl Edges<Bag<'_>, Contains> {
     fn decompose(&self) -> Vec<Edge<Bag<'_>, Contains>> {
         self.v
@@ -32,12 +37,28 @@ impl Edges<Bag<'_>, Contains> {
             })
             .collect()
     }
-    fn from_line(line: &str) -> Self {
-        BAG_REGEX_A.is_match(line);
-        Edges {
-            a: Bag("Hello"),
-            v: vec![],
-        }
+}
+
+impl FromStr for Edges<Bag<'_>, Contains> {
+    type Err = Box<dyn std::error::Error>;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut caps = BAG_REGEX.captures_iter(s);
+
+        // Pull out the first capture group. It is the A node
+        let (head, tail) = (caps.next().expect("No matches!"), caps);
+
+        let head = &head.extract_captured::<String>("description")[..];
+        let head = Bag(head);
+
+        // Pull out our vector of B nodes and weights, if they exist.
+        let tail = tail
+            .map(|cap| {
+                let description = &cap.extract_captured::<String>("description")[..];
+                let number = cap.extract_captured::<usize>("number");
+                (Bag(description), Contains(number))
+            })
+            .collect();
+        Ok(Edges { a: head, v: tail })
     }
 }
 
@@ -53,7 +74,7 @@ impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
 }
 
 lazy_static! {
-    static ref BAG_REGEX_A: Regex = Regex::new(r"^(\w+ \w+) bags contain(,? \d+ \w+ \w+ bags?)*")
+    static ref BAG_REGEX: Regex = Regex::new(r"(P<number>\d )?(P<description>\w+ \w+) bag")
         .expect("Couldn't compile bag regex");
 }
 
