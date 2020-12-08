@@ -1,0 +1,7 @@
+digraph {
+    0 [ label = "Bag(\"yellow\")" ]
+    1 [ label = "Bag(\"red\")" ]
+    2 [ label = "Bag(\"blue\")" ]
+    0 -> 1 [ label = "Contains(3)" ]
+    2 -> 1 [ label = "Contains(2)" ]
+}
