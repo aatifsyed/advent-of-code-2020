@@ -1,14 +1,6 @@
-use daggy::Dag;
-use petgraph::{
-    dot::Dot,
-    graphmap::GraphMap,
-    visit::{Bfs, GraphRef, Reversed},
-    Directed, IntoWeightedEdge,
-};
+use petgraph::{dot::Dot, graphmap::GraphMap, Directed, Direction, IntoWeightedEdge};
 use regex::Regex;
-use std::{fs, io, path};
-
-impl GraphRef for GraphMap<Bag<'_>, Contains, Directed> {}
+use std::{collections::HashSet, fs, io, iter::FromIterator, ops::Add, path};
 
 #[macro_use]
 extern crate lazy_static;
@@ -22,6 +14,13 @@ struct Bag<'b>(&'b str);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct Contains(usize);
+
+impl Add for Contains {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Contains(self.0 + other.0)
+    }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 struct Edge<'e> {
@@ -111,13 +110,32 @@ impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
     }
 }
 
+trait Solutions<'a> {
+    fn parents(&'a self, node: Bag<'a>) -> HashSet<Bag<'a>>;
+    fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains;
+}
+
+impl<'a> Solutions<'a> for GraphMap<Bag<'a>, Contains, Directed> {
+    fn parents(&'a self, node: Bag<'a>) -> HashSet<Bag<'a>> {
+        let mut parents = HashSet::from_iter(self.neighbors_directed(node, Direction::Incoming));
+        let grandparents: HashSet<Bag<'_>> =
+            parents.iter().map(|p| self.parents(*p)).flatten().collect();
+        parents.extend(grandparents.iter());
+        parents
+    }
+    fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains {
+        let edges = self.edges(node).filter(|e| e.0 == node);
+        ()
+    }
+}
+
 const DAY: &str = "07";
 
-fn part1(filepath: &str) {
+fn part1(filepath: &str) -> usize {
     let file = fs::read_to_string(filepath).unwrap();
     let edges = file.lines().map(Edges::from).flatten();
     let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
-    g.to_file("g.dot").unwrap();
+    g.parents(Bag("shiny gold")).len()
 }
 
 fn part2(filepath: &str) {}
@@ -133,7 +151,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&format!("../inputs/day{}.txt", DAY)), ());
+        assert_eq!(part1(&format!("../inputs/day{}.txt", DAY)), 177);
     }
     #[test]
     fn test_part2() {
@@ -197,7 +215,6 @@ mod tests {
         let file = fs::read_to_string("../inputs/examples/day07.txt").unwrap();
         let edges = file.lines().map(Edges::from).flatten();
         let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
-        let r = Reversed(g);
-        let bfs = Bfs::new(r, Bag("shiny gold"));
+        println!("{:?}", g.parents(Bag("shiny gold")));
     }
 }
