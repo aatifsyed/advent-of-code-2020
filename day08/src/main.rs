@@ -1,6 +1,8 @@
 use aocompute::{Computer, ComputerState, Instruction};
 use std::{collections::HashSet, str::FromStr};
 
+fn swap(i: Instruction) -> Instruction
+
 const DAY: &str = "08";
 
 fn part1(filepath: &str) -> isize {

@@ -1,4 +1,4 @@
-use std::{iter::Iterator, num::ParseIntError, str::FromStr};
+use std::{collections::HashSet, iter::Iterator, num::ParseIntError, str::FromStr};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Computer<'v> {
@@ -6,11 +6,15 @@ pub struct Computer<'v> {
     pub state: ComputerState,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputerState {
     pub accumulator: isize,
     pub instruction_index: isize,
+    pub visited: HashSet<isize>,
 }
+
+#[derive(Debug)]
+pub struct NoHaltError(ComputerState);
 
 impl<'v> Computer<'v> {
     pub fn new(instructions: &'v Vec<Instruction>) -> Self {
@@ -19,18 +23,26 @@ impl<'v> Computer<'v> {
             state: ComputerState {
                 accumulator: 0,
                 instruction_index: 0,
+                visited: HashSet::new(),
             },
         }
     }
 }
 
 impl<'v> Iterator for Computer<'v> {
-    type Item = ComputerState;
+    type Item = Result<ComputerState, NoHaltError>;
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.state.instruction_index;
 
+        // Successfully Halted
         if index as usize > self.instructions.len() {
             return None;
+        }
+
+        if self.state.visited.contains(&index) {
+            return Some(Err(NoHaltError(self.state)));
+        } else {
+            self.state.visited.insert(index);
         }
 
         self.state.instruction_index = match self.instructions[index as usize] {
@@ -41,7 +53,7 @@ impl<'v> Iterator for Computer<'v> {
             }
             Instruction::Jump(jump) => index + jump,
         };
-        Some(self.state)
+        Some(Ok(self.state))
     }
 }
 
