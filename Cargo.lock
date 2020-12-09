@@ -10,6 +10,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "aocompute"
+version = "0.1.0"
+
+[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -87,6 +91,17 @@ dependencies = [
  "lazy_static",
  "petgraph",
  "regex",
+ "regexutils",
+]
+
+[[package]]
+name = "day08"
+version = "0.1.0"
+dependencies = [
+ "aocompute",
+ "fileutils",
+ "itertools",
+ "lazy_static",
  "regexutils",
 ]
 

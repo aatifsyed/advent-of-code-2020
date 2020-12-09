@@ -1,2 +1,2 @@
 [workspace]
-members = ["day*/", "*utils/", "scratchpad/"]
+members = ["day*/", "*utils/", "scratchpad/", "aocompute"]
