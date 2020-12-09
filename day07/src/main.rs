@@ -112,7 +112,7 @@ impl ToFile for GraphMap<Bag<'_>, Contains, Directed> {
 
 trait Solutions<'a> {
     fn parents(&'a self, node: Bag<'a>) -> HashSet<Bag<'a>>;
-    fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains;
+    // fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains;
 }
 
 impl<'a> Solutions<'a> for GraphMap<Bag<'a>, Contains, Directed> {
@@ -123,10 +123,10 @@ impl<'a> Solutions<'a> for GraphMap<Bag<'a>, Contains, Directed> {
         parents.extend(grandparents.iter());
         parents
     }
-    fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains {
-        let edges = self.edges(node).filter(|e| e.0 == node);
-        ()
-    }
+    // fn children_sum_edges(&'a self, node: Bag<'a>) -> Contains {
+    //     let edges = self.edges(node).filter(|e| e.0 == node);
+    //     ()
+    // }
 }
 
 const DAY: &str = "07";
