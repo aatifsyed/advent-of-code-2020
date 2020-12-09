@@ -22,6 +22,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfa8873f51c92e232f9bac4065cddef41b714152812bfc5f7672ba16d6ef8cd9"
 
 [[package]]
+name = "daggy"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c90e7673f8e419ea041efa8e58d52c526d1fac00908ae47fde06b4863c4fccb3"
+dependencies = [
+ "petgraph",
+]
+
+[[package]]
 name = "day01"
 version = "0.1.0"
 dependencies = [
@@ -73,6 +82,7 @@ dependencies = [
 name = "day07"
 version = "0.1.0"
 dependencies = [
+ "daggy",
  "itertools",
  "lazy_static",
  "petgraph",

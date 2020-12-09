@@ -1,6 +1,14 @@
-use petgraph::{dot::Dot, graphmap::GraphMap, Directed, IntoWeightedEdge};
+use daggy::Dag;
+use petgraph::{
+    dot::Dot,
+    graphmap::GraphMap,
+    visit::{Bfs, GraphRef, Reversed},
+    Directed, IntoWeightedEdge,
+};
 use regex::Regex;
 use std::{fs, io, path};
+
+impl GraphRef for GraphMap<Bag<'_>, Contains, Directed> {}
 
 #[macro_use]
 extern crate lazy_static;
@@ -189,6 +197,7 @@ mod tests {
         let file = fs::read_to_string("../inputs/examples/day07.txt").unwrap();
         let edges = file.lines().map(Edges::from).flatten();
         let g: GraphMap<_, _, Directed> = GraphMap::from_edges(edges);
-        g.to_file("g.dot").unwrap();
+        let r = Reversed(g);
+        let bfs = Bfs::new(r, Bag("shiny gold"));
     }
 }

@@ -13,3 +13,4 @@ lazy_static = "1.4.0"
 regexutils = {path = "../regexutils"}
 regex = "1.4.2"
 itertools = "0.9.0"
+daggy = "0.7.0"
