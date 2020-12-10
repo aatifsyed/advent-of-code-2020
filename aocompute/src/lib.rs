@@ -1,4 +1,4 @@
-use std::{convert::From, iter::Iterator, num::ParseIntError, str::FromStr};
+use std::{convert::From, error, fmt, fs, iter::Iterator, num, path, str::FromStr};
 use Instruction::*;
 use Status::*;
 
@@ -30,6 +30,10 @@ impl Memory {
             accumulator: 0,
             index: 0,
         }
+    }
+    pub fn from_file<P: AsRef<path::Path>>(path: P) -> Result<Self, Box<dyn error::Error>> {
+        let m: Memory = fs::read_to_string(path)?.parse()?;
+        Ok(m)
     }
 }
 
@@ -70,6 +74,13 @@ impl From<Memory> for Status {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct ParseInstructionError;
+impl fmt::Display for ParseInstructionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Couldn't parse instruction from {}", "foo")
+    }
+}
+
+impl error::Error for ParseInstructionError {}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Instruction {
@@ -83,7 +94,7 @@ impl FromStr for Instruction {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut words = s.split_whitespace();
         let (instruction, args) = (words.next(), words);
-        let args: Result<Vec<isize>, ParseIntError> = args.map(|s| s.parse()).collect();
+        let args: Result<Vec<isize>, num::ParseIntError> = args.map(|s| s.parse()).collect();
         match args {
             Ok(args) => match instruction {
                 Some("nop") if args.len() == 1 => Ok(Noop(args[0])),
@@ -127,5 +138,10 @@ mod tests {
                 Accumulate(6)
             ]
         );
+    }
+    #[test]
+    fn from_invalid_data() {
+        Memory::from_file("foo").expect_err("Expected error reading file!");
+        Memory::from_str("foo").expect_err("Expected error reading string!");
     }
 }
