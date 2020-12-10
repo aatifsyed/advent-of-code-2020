@@ -1,47 +1,70 @@
-use std::{iter::Iterator, num::ParseIntError, str::FromStr};
+use std::{convert::From, iter::Iterator, num::ParseIntError, str::FromStr};
+use Instruction::*;
+use Status::*;
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Computer<'v> {
-    pub instructions: &'v Vec<Instruction>,
-    pub state: ComputerState,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct ComputerState {
+pub struct Memory {
+    pub instructions: Vec<Instruction>,
     pub accumulator: isize,
-    pub instruction_index: isize,
+    pub index: isize,
 }
 
-impl<'v> Computer<'v> {
-    pub fn new(instructions: &'v Vec<Instruction>) -> Self {
-        Computer {
-            instructions,
-            state: ComputerState {
-                accumulator: 0,
-                instruction_index: 0,
-            },
+impl Memory {
+    pub fn execute_instruction(mut self) -> Self {
+        match self.instructions[self.index as usize] {
+            Noop(_) => self.index += 1,
+            Accumulate(a) => {
+                self.accumulator += a;
+                self.index += 1
+            }
+            Jump(j) => self.index += j,
+        };
+        self
+    }
+    pub fn new<I>(instructions: I) -> Self
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        Self {
+            instructions: instructions.into_iter().collect(),
+            accumulator: 0,
+            index: 0,
         }
     }
 }
 
-impl<'v> Iterator for Computer<'v> {
-    type Item = ComputerState;
-    fn next(&mut self) -> Option<Self::Item> {
-        let index = self.state.instruction_index;
-
-        if index as usize > self.instructions.len() {
-            return None;
+impl FromStr for Memory {
+    type Err = ParseInstructionError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // https://users.rust-lang.org/t/solved-whats-the-proper-way-to-bubble-up-errors-from-within-closures/13400/2
+        let instructions = s
+            .lines()
+            .map(|line: &str| line.parse::<Instruction>())
+            .collect::<Result<Vec<_>, _>>();
+        match instructions {
+            Ok(i) => Ok(Self::new(i)),
+            Err(e) => Err(e),
         }
+    }
+}
 
-        self.state.instruction_index = match self.instructions[index as usize] {
-            Instruction::Noop(_) => index + 1,
-            Instruction::Accumulate(acc) => {
-                self.state.accumulator += acc;
-                index + 1
+#[derive(Debug)]
+pub enum Status {
+    Running(Memory),
+    Halted(Memory),
+    InvalidIndex(Memory),
+}
+
+impl From<Memory> for Status {
+    fn from(memory: Memory) -> Self {
+        if memory.index as usize == memory.instructions.len() {
+            Halted(memory)
+        } else {
+            match memory.instructions.get(memory.index as usize) {
+                Some(_) => Running(memory),
+                None => InvalidIndex(memory),
             }
-            Instruction::Jump(jump) => index + jump,
-        };
-        Some(self.state)
+        }
     }
 }
 
@@ -63,10 +86,10 @@ impl FromStr for Instruction {
         let args: Result<Vec<isize>, ParseIntError> = args.map(|s| s.parse()).collect();
         match args {
             Ok(args) => match instruction {
-                Some("nop") if args.len() == 1 => Ok(Instruction::Noop(args[0])),
-                Some("acc") if args.len() == 1 => Ok(Instruction::Accumulate(args[0])),
-                Some("jmp") if args.len() == 1 => Ok(Instruction::Jump(args[0])),
-                _ => Err(ParseInstructionError),
+                Some("nop") if args.len() == 1 => Ok(Noop(args[0])),
+                Some("acc") if args.len() == 1 => Ok(Accumulate(args[0])),
+                Some("jmp") if args.len() == 1 => Ok(Jump(args[0])),
+                Some(_) | None => Err(ParseInstructionError),
             },
             Err(_) => Err(ParseInstructionError),
         }
@@ -85,31 +108,24 @@ mod tests {
         );
     }
     #[test]
-    fn nop() {
-        let instructions = vec![Instruction::Noop(-2)];
-        let mut comp = Computer::new(&instructions);
-
-        // Assert initial conditions
+    fn parse_instructions() {
+        let memory: Memory =
+            "nop +0\nacc +1\njmp +4\nacc +3\njmp -3\nacc -99\nacc +1\njmp -4\nacc +6\n"
+                .parse()
+                .unwrap();
         assert_eq!(
-            comp.state,
-            ComputerState {
-                accumulator: 0,
-                instruction_index: 0
-            }
-        );
-
-        let new_state = comp.next().unwrap();
-
-        // Ensure what we've returned matches our internal state
-        assert_eq!(new_state, comp.state);
-
-        // Ensure we've (only) incremented the program counter as a result of the Noop
-        assert_eq!(
-            new_state,
-            ComputerState {
-                accumulator: 0,
-                instruction_index: 1
-            }
+            memory.instructions,
+            vec![
+                Noop(0),
+                Accumulate(1),
+                Jump(4),
+                Accumulate(3),
+                Jump(-3),
+                Accumulate(-99),
+                Accumulate(1),
+                Jump(-4),
+                Accumulate(6)
+            ]
         );
     }
 }
