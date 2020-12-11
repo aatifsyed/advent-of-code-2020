@@ -1,8 +1,9 @@
 use std::{convert::From, error, fmt, fs, iter::Iterator, num, path, str::FromStr};
 use Instruction::*;
 use Status::*;
+pub mod immutable;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Memory {
     pub instructions: Vec<Instruction>,
     pub accumulator: isize,
@@ -82,7 +83,7 @@ impl fmt::Display for ParseInstructionError {
 
 impl error::Error for ParseInstructionError {}
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Instruction {
     Noop(isize),
     Accumulate(isize),
